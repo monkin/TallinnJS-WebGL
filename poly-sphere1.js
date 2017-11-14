@@ -1,10 +1,6 @@
 // Normal per face
 
-const SEGMENTS_COUNT = 128;
-
-const LIGHT_SOURCE = [-2, -4, -5];
-
-const vertexSource = `
+const vertexSource1 = `
 attribute vec3 a_point;
 attribute vec3 a_normal;
 
@@ -21,7 +17,7 @@ void main() {
             : vec4(a_point.x * 0.8, a_point.y * u_ratio * 0.8, 0, 1);
 }`;
 
-const fragmentSource = `
+const fragmentSource1 = `
 precision highp float;
 
 varying vec3 v_point;
@@ -52,40 +48,35 @@ function initPolySphere1(gl) {
     // Generating sphere geometry
     const vertexes = [];
     for (let i = 0; i < SEGMENTS_COUNT; i++) {
-        const a = i / SEGMENTS_COUNT * Math.PI,
+        const a = i / (SEGMENTS_COUNT - 1) * Math.PI,
             sinA = Math.sin(a),
             cosA = Math.cos(a);
         for (let j = 0; j < SEGMENTS_COUNT; j++) {
-            const b = i / SEGMENTS_COUNT * Math.PI * 2,
+            const b = j / SEGMENTS_COUNT * Math.PI * 2,
                 sinB = Math.sin(b),
                 cosB = Math.cos(b);
             vertexes.push([
-                cosB * sinA, // x
-                cosA,        // y
-                sinB * sinA  // z
+                cosB * sinA,   // x
+                cosA,          // y
+                - sinB * sinA  // z
             ]);
+            console.log("!!!", sinB.toFixed(4), sinA.toFixed(4))
         }
     }
 
-    const vertexesAndNormales = [];
+    const triangles = [];
     for (let i = 0; i <= SEGMENTS_COUNT; i++) {
         for (let j = 0; j <= SEGMENTS_COUNT; j++) {
             const cI = i % SEGMENTS_COUNT,
                 cJ = j % SEGMENTS_COUNT,
                 nI = (i + 1) % SEGMENTS_COUNT,
                 nJ = (j + 1) % SEGMENTS_COUNT,
-                p1 = vertexes[cI * SEGMENTS_COUNT + cJ],
-                p2 = vertexes[nI * SEGMENTS_COUNT + cJ],
-                p3 = vertexes[cI * SEGMENTS_COUNT + nJ],
-                p4 = vertexes[nI * SEGMENTS_COUNT + nJ],
-                v1 = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]],
-                v2 = [p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]],
-                normal = [
-                    v1[1] * v2[2] - v1[2] * v2[1],
-                    v1[2] * v2[0] - v1[0] * v2[2],
-                    v1[0] * v2[1] - v1[1] * v2[0]
-                ];
-            vertexesAndNormales.push(
+                p1 = vertexes[cJ * SEGMENTS_COUNT + cI],
+                p2 = vertexes[nJ * SEGMENTS_COUNT + cI],
+                p3 = vertexes[cJ * SEGMENTS_COUNT + nI],
+                p4 = vertexes[nJ * SEGMENTS_COUNT + nI],
+                normal = p1.map((v, i) => (v + p2[i] + p3[i] + p4[i]) / 4);
+            triangles.push(
                 // first triangle
                 ...p1, ...normal,
                 ...p2, ...normal,
@@ -102,10 +93,10 @@ function initPolySphere1(gl) {
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     // Write data to buffer
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexesAndNormales), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangles), gl.STATIC_DRAW);
 
     // Prepare program and parameters
-    const program = buildShaderProgram(gl, vertexSource, fragmentSource),
+    const program = buildShaderProgram(gl, vertexSource1, fragmentSource1),
         ratioLocation = gl.getUniformLocation(program, "u_ratio"),
         lightLocation = gl.getUniformLocation(program, "u_light"),
         pointLocation = gl.getAttribLocation(program, "a_point"),
@@ -124,6 +115,6 @@ function initPolySphere1(gl) {
     return function drawFrame(ratio) {
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniform1f(ratioLocation, ratio);
-        gl.drawArrays(gl.TRIANGLES, 0, 4);
+        gl.drawArrays(gl.TRIANGLES, 0, triangles.length / 6);
     }
 }

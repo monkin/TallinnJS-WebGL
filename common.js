@@ -1,5 +1,15 @@
 
 /**
+ * Sphere segments count
+ */
+const SEGMENTS_COUNT = 12;
+
+/**
+ * Light source position
+ */
+const LIGHT_SOURCE = [-2, -4, -5];
+
+/**
  * @param initFn (WebGLContext) => (screenRatio) => void, initializes resources, returns draw function that will be called in the loop
  */
 function drawLoop(canvasId, initFn) {
