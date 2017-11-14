@@ -2,7 +2,7 @@
 /**
  * Sphere segments count
  */
-const SEGMENTS_COUNT = 12;
+const SEGMENTS_COUNT = 16;
 
 /**
  * Light source position

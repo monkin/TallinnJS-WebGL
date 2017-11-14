@@ -65,7 +65,7 @@ function initPolySphere1(gl) {
     }
 
     const triangles = [];
-    for (let i = 0; i <= SEGMENTS_COUNT; i++) {
+    for (let i = 0; i < SEGMENTS_COUNT; i++) {
         for (let j = 0; j <= SEGMENTS_COUNT; j++) {
             const cI = i % SEGMENTS_COUNT,
                 cJ = j % SEGMENTS_COUNT,
