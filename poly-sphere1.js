@@ -2,7 +2,7 @@
 
 const SEGMENTS_COUNT = 128;
 
-const lightSource = "vec3(-2, -4, -5)";
+const LIGHT_SOURCE = [-2, -4, -5];
 
 const vertexSource = `
 attribute vec3 a_point;
@@ -36,7 +36,7 @@ void main() {
     float ambient = 0.05;
     float diffuse = max(0.0, dot(n, light));
     float specular = 0.8 * pow(max(0.0, dot(normalize(reflect(light, n)), vec3(0, 0, -1))), 15.0);
-    vec3 color = 0.1 +  0.4 * (ambient + diffuse) + specular;
+    vec3 color = vec3(0.1 +  0.4 * (ambient + diffuse) + specular);
     vec3 sRGBColor = pow(color, vec3(1.0 / 2.2));
     gl_FragColor = vec4(sRGBColor, 1);
 }`;
@@ -49,17 +49,17 @@ function initPolySphere1(gl) {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.clearColor(0, 0, 0, 1);
 
-    // Generating geometry
+    // Generating sphere geometry
     const vertexes = [];
     for (let i = 0; i < SEGMENTS_COUNT; i++) {
         const a = i / SEGMENTS_COUNT * Math.PI,
             sinA = Math.sin(a),
-            cosA = Math.cos(z);
+            cosA = Math.cos(a);
         for (let j = 0; j < SEGMENTS_COUNT; j++) {
             const b = i / SEGMENTS_COUNT * Math.PI * 2,
                 sinB = Math.sin(b),
                 cosB = Math.cos(b);
-            points.push([
+            vertexes.push([
                 cosB * sinA, // x
                 cosA,        // y
                 sinB * sinA  // z
@@ -70,12 +70,14 @@ function initPolySphere1(gl) {
     const vertexesAndNormales = [];
     for (let i = 0; i <= SEGMENTS_COUNT; i++) {
         for (let j = 0; j <= SEGMENTS_COUNT; j++) {
-            const nextI = (i + 1) % SEGMENTS_COUNT,
-                nextJ = (j + 1) % SEGMENTS_COUNT,
-                p1 = vertexes[i * SEGMENTS_COUNT + j],
-                p2 = vertexes[nextI * SEGMENTS_COUNT + j],
-                p3 = vertexes[i * SEGMENTS_COUNT + nextJ],
-                p4 = vertexes[nextI * SEGMENTS_COUNT + nextJ],
+            const cI = i % SEGMENTS_COUNT,
+                cJ = j % SEGMENTS_COUNT,
+                nI = (i + 1) % SEGMENTS_COUNT,
+                nJ = (j + 1) % SEGMENTS_COUNT,
+                p1 = vertexes[cI * SEGMENTS_COUNT + cJ],
+                p2 = vertexes[nI * SEGMENTS_COUNT + cJ],
+                p3 = vertexes[cI * SEGMENTS_COUNT + nJ],
+                p4 = vertexes[nI * SEGMENTS_COUNT + nJ],
                 v1 = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]],
                 v2 = [p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]],
                 normal = [
@@ -98,96 +100,30 @@ function initPolySphere1(gl) {
 
     // Buffer with vertexes and normales
     const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, points);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     // Write data to buffer
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexesAndNormales), gl.STATIC_DRAW);
 
     // Prepare program and parameters
-    const program = compile(vertexSource, fragmentSource),
-        ratioLocation = gl.getUniformLocation(ballProgram, "u_ratio"),
-        lightLocation = gl.getUniformLocation(ballProgram, "u_light"),
-        u_light
+    const program = buildShaderProgram(gl, vertexSource, fragmentSource),
+        ratioLocation = gl.getUniformLocation(program, "u_ratio"),
+        lightLocation = gl.getUniformLocation(program, "u_light"),
+        pointLocation = gl.getAttribLocation(program, "a_point"),
+        normalLocation = gl.getAttribLocation(program, "a_normal");
 
+    gl.useProgram(program);
+    gl.uniform3f(lightLocation, ...LIGHT_SOURCE);
 
+    gl.enableVertexAttribArray(pointLocation);
+    gl.vertexAttribPointer(pointLocation, 3, gl.FLOAT, false, 6 * 4, 0);
+
+    gl.enableVertexAttribArray(normalLocation);
+    gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 6 * 4, 3 * 4);
+
+    // Draw loop
     return function drawFrame(ratio) {
-        gl.clear();
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform1f(ratioLocation, ratio);
+        gl.drawArrays(gl.TRIANGLES, 0, 4);
     }
 }
-
-
-
-const gl = canvas.getContext("webgl", { antialias: false, depth: false, premultipliedAlpha: false }),
-    points = gl.createBuffer();
-
-gl.enable(gl.BLEND);
-gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-gl.bindBuffer(gl.ARRAY_BUFFER, points);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-
-function createStage() {
-    const start = Date.now(),
-        STAGE_DURATION = 10000;
-    let now = start;
-    return {
-        next() {
-            if (now - start > STAGE_DURATION) {
-                return Promise.resolve(false);
-            } else {
-                return new Promise(resolve => {
-                    requestAnimationFrame(() => {
-                        now = Date.now();
-                        resolve(true);
-                    });
-                });
-            }
-        },
-        time() {
-            return Math.min(1, (now - start) / STAGE_DURATION);
-        }
-    };
-}
-
-
-
-
-setTimeout(async function() {
-    let ballProgram = compile(ballVertexSource, ballFragmentSource),
-        bgProgram = compile(bgVertexSource, bgFragmentSource),
-        ballRatioLocation = gl.getUniformLocation(ballProgram, "u_ratio"),
-        ballPixelSizeLocation = gl.getUniformLocation(ballProgram, "u_pixelSize"),
-        ballTimeLocation = gl.getUniformLocation(ballProgram, "u_time"),
-        seedLocation = gl.getUniformLocation(ballProgram, `u_seed`),
-        bgRatioLocation = gl.getUniformLocation(bgProgram, "u_ratio"),
-        start = Date.now(),
-        seed1 = randomSeed(),
-        seed2 = randomSeed();
-
-    while (true) {
-        const stage = createStage();
-
-        seed1 = seed2;
-        seed2 = randomSeed();
-
-        while (await stage.next()) {
-            resize();
-            const time = Date.now() - start;
-
-            gl.useProgram(bgProgram);
-            gl.uniform1f(bgRatioLocation, ratio);
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-            gl.useProgram(ballProgram);
-            gl.uniform1f(ballRatioLocation, ratio);
-            gl.uniform1f(ballPixelSizeLocation, 1 / (Math.min(width, height) * 0.75));
-            gl.uniform1f(ballTimeLocation, time);
-            gl.uniform1fv(seedLocation, mix(seed1, seed2, easing(stage.time())));
-
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        }
-    }
-});
-
-
-console.log(ballVertexSource);
-console.log(ballFragmentSource);

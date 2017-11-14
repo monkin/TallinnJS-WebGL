@@ -20,7 +20,7 @@ function drawLoop(canvasId, initFn) {
 
             canvas.setAttribute("width", width.toFixed(0));
             canvas.setAttribute("height", height.toFixed(0));
-            gl.viewport(0, 0, width, height);
+            context.viewport(0, 0, width, height);
             resizeRequested = false;
         }
     }
@@ -37,7 +37,7 @@ function drawLoop(canvasId, initFn) {
     })();
 }
 
-function compile(vertexSource, fragmentSource) {
+function buildShaderProgram(gl, vertexSource, fragmentSource) {
     let vshader = gl.createShader(gl.VERTEX_SHADER),
         fshader = gl.createShader(gl.FRAGMENT_SHADER),
         program = gl.createProgram();
