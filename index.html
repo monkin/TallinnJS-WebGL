@@ -10,6 +10,8 @@
             canvas {
                 width: 45vw;
                 height: 33vw;
+                display: block;
+                margin: 2rem auto;
             }
         </style>
     </head>
@@ -17,13 +19,14 @@
         <canvas id="sphere1"></canvas>
         <canvas id="sphere2"></canvas>
         <canvas id="sphere3"></canvas>
-        <canvas id="sphere4"></canvas>
         <script src="./common.js"></script>
         <script src="./poly-sphere1.js"></script>
         <script src="./poly-sphere2.js"></script>
+        <script src="./poly-sphere3.js"></script>
         <script>
             drawLoop("sphere1", initPolySphere1);
             drawLoop("sphere2", initPolySphere2);
+            drawLoop("sphere3", initPolySphere3);
         </script>
     </body>
 </thml>

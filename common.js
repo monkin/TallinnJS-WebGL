@@ -63,10 +63,12 @@ function buildShaderProgram(gl, vertexSource, fragmentSource) {
     gl.linkProgram(program);
 
     if (!gl.getShaderParameter(vshader, gl.COMPILE_STATUS)) {
-        throw new Error("Error compiling vertex shader: " + gl.getShaderInfoLog(vshader) + "\n" + vertexSource);
+        let i = 0;
+        throw new Error("Error compiling vertex shader: " + gl.getShaderInfoLog(vshader) + "\n" + vertexSource.replace(/^/mg, () => `${i++}: `));
     }
     if (!gl.getShaderParameter(fshader, gl.COMPILE_STATUS)) {
-        throw new Error("Error compiling fragment shader: " + gl.getShaderInfoLog(fshader) + "\n" + fragmentSource);
+        let i = 0;
+        throw new Error("Error compiling fragment shader: " + gl.getShaderInfoLog(fshader) + "\n" + fragmentSource.replace(/^/mg, () => `${i++}: `));
     }
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
         throw new Error("Error linking shaders: " + gl.getProgramInfoLog(program) + "\n" + vertexSource + "\n---\n" + fragmentSource);

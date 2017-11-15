@@ -60,7 +60,6 @@ function initPolySphere1(gl) {
                 cosA,          // y
                 - sinB * sinA  // z
             ]);
-            console.log("!!!", sinB.toFixed(4), sinA.toFixed(4))
         }
     }
 
