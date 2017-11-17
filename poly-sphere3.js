@@ -1,7 +1,5 @@
 // Bump mapping
 
-// Normal per vertex
-
 const vertexSource3 = `
 attribute vec3 a_point;
 attribute vec2 a_angles;
@@ -57,6 +55,13 @@ void main() {
     vec3 sRGBColor = pow(color, vec3(1.0 / 2.2));
     gl_FragColor = vec4(sRGBColor, 1);
 }`;
+
+function getLightSource(time) {
+    const a = time / 1000,
+        x = 4 * Math.cos(a),
+        y = 4 * Math.sin(a);
+    return [x, y, -5];
+}
 
 
 function initPolySphere3(gl) {
@@ -118,7 +123,6 @@ function initPolySphere3(gl) {
         anglesLocation = gl.getAttribLocation(program, "a_angles");
 
     gl.useProgram(program);
-    gl.uniform3f(lightLocation, ...LIGHT_SOURCE);
 
     gl.enableVertexAttribArray(pointLocation);
     gl.vertexAttribPointer(pointLocation, 3, gl.FLOAT, false, 5 * 4, 0);
@@ -129,6 +133,7 @@ function initPolySphere3(gl) {
     return function drawFrame(ratio) {
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniform1f(ratioLocation, ratio);
+        gl.uniform3f(lightLocation, ...getLightSource(Date.now()));
         gl.drawArrays(gl.TRIANGLES, 0, triangles.length / 5);
     }
 }
